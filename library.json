@@ -1,0 +1,17 @@
+{
+	"name": "OvhAPI",
+	"version": "1.0.0",
+	"keywords": "ovhapi",
+	"description": "Arduino Library to simplify working with OVH API.",
+	"homepage": "https://github.com/BCISOFT/OvhAPI",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/BCISOFT/OvhAPI"
+	},
+	"authors": {
+		"name": "Christophe Bouvier",
+		"url": "https://www.bcisoft.fr/"
+	},
+	"frameworks": "arduino",
+	"platforms": "*"
+}
