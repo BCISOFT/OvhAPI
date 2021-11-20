@@ -1,6 +1,6 @@
 {
 	"name": "OvhAPI",
-	"version": "1.0.0",
+	"version": "1.0.3",
 	"keywords": "ovhapi",
 	"description": "Arduino Library to simplify working with OVH API.",
 	"homepage": "https://github.com/BCISOFT/OvhAPI",
