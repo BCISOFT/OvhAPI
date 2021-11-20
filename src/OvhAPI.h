@@ -1,8 +1,3 @@
-/*
-  ovhapi.h - Library for using OVH API.
-  Created by David A. Mellis, November 19, 2021.
-  Released into the public domain.
-*/
 #ifndef OvhApi_h
 #define OvhApi_h
 
