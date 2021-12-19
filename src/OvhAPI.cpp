@@ -39,6 +39,7 @@ OvhAPI::OvhAPI(NTPClient* timeClient, int endpoint, const char* application_key,
   _application_secret = application_secret;
   _consumer_key = consumer_key;
   _timeClient = timeClient;
+  _http = new HTTPClient();
 
   // OVH_DEBUG_PRINT("OvhAPI::OvhAPI _endpoint= ");OVH_DEBUG_PRINTLN(_endpoint);
   // OVH_DEBUG_PRINT("OvhAPI::OvhAPI _application_key= ");OVH_DEBUG_PRINTLN(_application_key);
@@ -231,35 +232,75 @@ struct response OvhAPI::raw_call(const char* method, const char* path, const cha
   String target = String(_endpoint) + String(path);
   // OVH_DEBUG_PRINT("    INFO OvhAPI::raw_call: target=");OVH_DEBUG_PRINTLN(target);
 
+  #ifdef OVH_PROFILE
+    unsigned long pstart, pend, pdur;
+    pstart=micros();
+  #endif  
+
   String rest_method = String(method);
   String(method).toUpperCase();
 
-  if ((WiFi.status() == WL_CONNECTED)) { //Check the current connection status
-    HTTPClient http;
+  #ifdef OVH_PROFILE
+    pend=micros(); pdur=pend-pstart;
+    Serial.print("Timing 245: "); Serial.println(pdur);
+    pstart=micros();
+  #endif
 
-    http.begin(target.c_str());
-    http.addHeader("X-Ovh-Application", _application_key);
+  if ((WiFi.status() == WL_CONNECTED)) { //Check the current connection status
+
+    _http->begin(target.c_str());
+    _http->addHeader("X-Ovh-Application", _application_key);
     // OVH_DEBUG_PRINT("    INFO OvhAPI::raw_call: X-Ovh-Application = ");OVH_DEBUG_PRINTLN(_application_key);
 
+    #ifdef OVH_PROFILE
+      pend=micros(); pdur=pend-pstart;
+      Serial.print("Timing 257: "); Serial.println(pdur);
+      pstart=micros();
+    #endif
+
     if (strlen(data) > 0) {
-      http.addHeader("Content-type", "application/json");
+      _http->addHeader("Content-type", "application/json");
       // OVH_DEBUG_PRINTLN("    INFO OvhAPI::raw_call: Content-Type = application/json");
       body = String(JSONVar::stringify(JSON.parse(data)).c_str());
     }
+
+    #ifdef OVH_PROFILE
+      pend=micros(); pdur=pend-pstart;
+      Serial.print("Timing 268: "); Serial.println(pdur);
+      pstart=micros();
+    #endif
 
     if (need_auth) {
       String now = String(time_delta() + _timeClient->getEpochTime());
       // OVH_DEBUG_PRINT("    INFO OvhAPI::raw_call: now=");OVH_DEBUG_PRINTLN(now);
 
+      #ifdef OVH_PROFILE
+        pend=micros(); pdur=pend-pstart;
+        Serial.print("Timing 279: "); Serial.println(pdur);
+        pstart=micros();
+      #endif
+
       String signature = String(_application_secret) + "+" + String(_consumer_key) + "+" + rest_method + "+" + target + "+" + body + "+" + now;
       // OVH_DEBUG_PRINT("    INFO OvhAPI::raw_call: signature = ");OVH_DEBUG_PRINTLN(signature);
+
+      #ifdef OVH_PROFILE
+        pend=micros(); pdur=pend-pstart;
+        Serial.print("Timing 288: "); Serial.println(pdur);
+        pstart=micros();
+      #endif
 
       signature = "$1$" + sha1(signature);
       // OVH_DEBUG_PRINT("    INFO OvhAPI::raw_call: $1$ + sha1(signature) = ");OVH_DEBUG_PRINTLN(signature);
 
-      http.addHeader("X-Ovh-Consumer", _consumer_key);
-      http.addHeader("X-Ovh-Timestamp", now);
-      http.addHeader("X-Ovh-Signature", signature);
+      _http->addHeader("X-Ovh-Consumer", _consumer_key);
+      _http->addHeader("X-Ovh-Timestamp", now);
+      _http->addHeader("X-Ovh-Signature", signature);
+
+      #ifdef OVH_PROFILE
+        pend=micros(); pdur=pend-pstart;
+        Serial.print("Timing 301: "); Serial.println(pdur);
+        pstart=micros();
+      #endif
 
       // OVH_DEBUG_PRINT("    INFO OvhAPI::raw_call: X-Ovh-Consumer = ");OVH_DEBUG_PRINTLN(_consumer_key);
       // OVH_DEBUG_PRINT("    INFO OvhAPI::raw_call: X-Ovh-Timestamp = ");OVH_DEBUG_PRINTLN(now);
@@ -267,26 +308,45 @@ struct response OvhAPI::raw_call(const char* method, const char* path, const cha
     }
 
     if(rest_method == "GET") {
-      rtn.code = http.GET();
+      rtn.code = _http->GET();
     } else if(rest_method == "PUT") {
-      rtn.code = http.PUT(body);
+      rtn.code = _http->PUT(body);
     } else if(rest_method == "POST") {
-      rtn.code = http.POST(body);
+      rtn.code = _http->POST(body);
     } else if(rest_method == "DELETE") {
-      rtn.code = http.sendRequest("DELETE");
+      rtn.code = _http->sendRequest("DELETE");
     } else {
       OVH_DEBUG_PRINTLN("    END OvhAPI::raw_call: method not allowed");
       rtn.code = HTTP_CODE_METHOD_NOT_ALLOWED;
       return {HTTP_CODE_METHOD_NOT_ALLOWED, "method not allowed"};
     }
 
+    #ifdef OVH_PROFILE
+      pend=micros(); pdur=pend-pstart;
+      Serial.print("Timing 326: "); Serial.println(pdur);
+      pstart=micros();
+    #endif
+
     // OVH_DEBUG_PRINT("    INFO OvhAPI::raw_call: rtn.code=");OVH_DEBUG_PRINTLN(rtn.code);
       
-    rtn.data = http.getString();
+    rtn.data = _http->getString();
+
+  #ifdef OVH_PROFILE
+    pend=micros(); pdur=pend-pstart;
+    Serial.print("Timing 336: "); Serial.println(pdur);
+    pstart=micros();
+  #endif
+
   } else {
     OVH_DEBUG_PRINTLN("    END OvhAPI::raw_call: WiFi not connected");
     return {HTTPC_ERROR_NOT_CONNECTED, "not connected"};
   }
+
+  #ifdef OVH_PROFILE
+    pend=micros(); pdur=pend-pstart;
+    Serial.print("Timing 347: "); Serial.println(pdur);
+    pstart=micros();
+  #endif
 
   OVH_DEBUG_PRINT("    END OvhAPI::raw_call rtn.code=");OVH_DEBUG_PRINTLN(rtn.code);
   OVH_DEBUG_PRINT("    END OvhAPI::raw_call rtn.data=");OVH_DEBUG_PRINTLN(rtn.data);

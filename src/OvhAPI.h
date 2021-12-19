@@ -18,6 +18,7 @@
 #define ENDPOINT_SOYOUSTART_CA     6
 
 #define noOVH_DEBUG
+#define noOVH_PROFILE
 
 #ifdef OVH_DEBUG
   #define OVH_DEBUG_PRINTLN(x) Serial.println(x)
@@ -61,6 +62,8 @@ class OvhAPI
     NTPClient* _timeClient;
     bool _time_delta_read = false;
     int _time_delta;
+    HTTPClient* _http;
+
 
     String sha1(String payloadStr);
     int time_delta();
